@@ -1,0 +1,789 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics Dashboard - AI Recognition System{% endblock %}
+
+{% block content %}
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center min-vh-100">
+            <div class="col-12">
+                <div class="analytics-content">
+                    <div class="badge bg-gradient mb-3">Analytics Dashboard</div>
+                    <h1 class="display-2 fw-bold mb-4">
+                        System 
+                        <span class="text-gradient">Analytics</span>
+                    </h1>
+                    <p class="lead mb-5 text-secondary">
+                        Comprehensive insights and metrics for your face recognition system performance.
+                    </p>
+                    
+                    <!-- Key Metrics Overview -->
+                    <div class="row g-3 mb-5">
+                        <div class="col-md-3">
+                            <div class="metric-card primary">
+                                <div class="metric-icon">
+                                    <i class="bi bi-people"></i>
+                                </div>
+                                <div class="metric-info">
+                                    <div class="metric-value" id="totalUsers">0</div>
+                                    <div class="metric-label">Total Users</div>
+                                    <div class="metric-change positive">
+                                        <i class="bi bi-arrow-up"></i> +12% this month
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="metric-card success">
+                                <div class="metric-icon">
+                                    <i class="bi bi-person-check"></i>
+                                </div>
+                                <div class="metric-info">
+                                    <div class="metric-value" id="todayAttendance">0</div>
+                                    <div class="metric-label">Today's Attendance</div>
+                                    <div class="metric-change positive">
+                                        <i class="bi bi-arrow-up"></i> +8% vs yesterday
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="metric-card warning">
+                                <div class="metric-icon">
+                                    <i class="bi bi-clock"></i>
+                                </div>
+                                <div class="metric-info">
+                                    <div class="metric-value" id="avgCheckIn">--:--</div>
+                                    <div class="metric-label">Avg Check-in Time</div>
+                                    <div class="metric-change neutral">
+                                        <i class="bi bi-dash"></i> No change
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="metric-card info">
+                                <div class="metric-icon">
+                                    <i class="bi bi-graph-up"></i>
+                                </div>
+                                <div class="metric-info">
+                                    <div class="metric-value" id="recognitionRate">0%</div>
+                                    <div class="metric-label">Recognition Rate</div>
+                                    <div class="metric-change positive">
+                                        <i class="bi bi-arrow-up"></i> +2% this week
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Time Period Selector -->
+                    <div class="time-selector mb-4">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-primary active" onclick="changeTimePeriod('today')">Today</button>
+                            <button type="button" class="btn btn-outline-primary" onclick="changeTimePeriod('week')">This Week</button>
+                            <button type="button" class="btn btn-outline-primary" onclick="changeTimePeriod('month')">This Month</button>
+                            <button type="button" class="btn btn-outline-primary" onclick="changeTimePeriod('year')">This Year</button>
+                            <button type="button" class="btn btn-outline-primary" onclick="changeTimePeriod('custom')">Custom</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Charts Section -->
+                    <div class="row g-4 mb-5">
+                        <!-- Attendance Trend Chart -->
+                        <div class="col-lg-8">
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <h5 class="chart-title">
+                                        <i class="bi bi-graph-up me-2"></i>Attendance Trend
+                                    </h5>
+                                    <div class="chart-actions">
+                                        <button class="btn btn-sm btn-outline-primary" onclick="exportChart('attendance')">
+                                            <i class="bi bi-download"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="chart-container">
+                                    <canvas id="attendanceChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Department Distribution -->
+                        <div class="col-lg-4">
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <h5 class="chart-title">
+                                        <i class="bi bi-pie-chart me-2"></i>Department Distribution
+                                    </h5>
+                                </div>
+                                <div class="chart-container">
+                                    <canvas id="departmentChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Analytics Cards -->
+                    <div class="row g-4 mb-5">
+                        <!-- Recognition Accuracy -->
+                        <div class="col-lg-6">
+                            <div class="analytics-card">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="bi bi-shield-check me-2"></i>Recognition Accuracy
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="accuracy-metrics">
+                                        <div class="accuracy-item">
+                                            <div class="accuracy-label">True Positive</div>
+                                            <div class="accuracy-bar">
+                                                <div class="accuracy-fill success" style="width: 95%"></div>
+                                            </div>
+                                            <div class="accuracy-value">95%</div>
+                                        </div>
+                                        <div class="accuracy-item">
+                                            <div class="accuracy-label">False Positive</div>
+                                            <div class="accuracy-bar">
+                                                <div class="accuracy-fill warning" style="width: 3%"></div>
+                                            </div>
+                                            <div class="accuracy-value">3%</div>
+                                        </div>
+                                        <div class="accuracy-item">
+                                            <div class="accuracy-label">False Negative</div>
+                                            <div class="accuracy-bar">
+                                                <div class="accuracy-fill danger" style="width: 2%"></div>
+                                            </div>
+                                            <div class="accuracy-value">2%</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Peak Hours Analysis -->
+                        <div class="col-lg-6">
+                            <div class="analytics-card">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="bi bi-clock-history me-2"></i>Peak Hours Analysis
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="peak-hours">
+                                        <div class="hour-bar">
+                                            <div class="hour-label">8:00 AM</div>
+                                            <div class="hour-progress">
+                                                <div class="hour-fill" style="width: 85%"></div>
+                                            </div>
+                                            <div class="hour-count">85%</div>
+                                        </div>
+                                        <div class="hour-bar">
+                                            <div class="hour-label">9:00 AM</div>
+                                            <div class="hour-progress">
+                                                <div class="hour-fill" style="width: 92%"></div>
+                                            </div>
+                                            <div class="hour-count">92%</div>
+                                        </div>
+                                        <div class="hour-bar">
+                                            <div class="hour-label">12:00 PM</div>
+                                            <div class="hour-progress">
+                                                <div class="hour-fill" style="width: 45%"></div>
+                                            </div>
+                                            <div class="hour-count">45%</div>
+                                        </div>
+                                        <div class="hour-bar">
+                                            <div class="hour-label">5:00 PM</div>
+                                            <div class="hour-progress">
+                                                <div class="hour-fill" style="width: 78%"></div>
+                                            </div>
+                                            <div class="hour-count">78%</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Activity Table -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="activity-card">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="bi bi-activity me-2"></i>Recent Activity
+                                    </h5>
+                                    <div class="card-actions">
+                                        <button class="btn btn-sm btn-outline-primary" onclick="refreshActivity()">
+                                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="exportActivity()">
+                                            <i class="bi bi-download"></i> Export
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="activity-table">
+                                        <div class="table-responsive">
+                                            <table class="table table-dark table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Time</th>
+                                                        <th>User</th>
+                                                        <th>Department</th>
+                                                        <th>Action</th>
+                                                        <th>Status</th>
+                                                        <th>Confidence</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="activityTableBody">
+                                                    <!-- Activity data will be loaded here -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .analytics-content {
+        padding: 2rem 0;
+    }
+    
+    .metric-card {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: all 0.3s ease;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--primary-gradient);
+    }
+    
+    .metric-card.primary::before {
+        background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-green) 100%);
+    }
+    
+    .metric-card.success::before {
+        background: linear-gradient(135deg, var(--accent-green) 0%, #28a745 100%);
+    }
+    
+    .metric-card.warning::before {
+        background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    }
+    
+    .metric-card.info::before {
+        background: linear-gradient(135deg, var(--accent-blue) 0%, #17a2b8 100%);
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-3px);
+        border-color: var(--accent-green);
+        box-shadow: 0 20px 40px rgba(0, 255, 136, 0.2);
+    }
+    
+    .metric-icon {
+        width: 60px;
+        height: 60px;
+        background: var(--primary-gradient);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--dark-bg);
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+    
+    .metric-info {
+        flex: 1;
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--accent-green);
+        line-height: 1;
+        margin-bottom: 0.25rem;
+    }
+    
+    .metric-label {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 0.5rem;
+    }
+    
+    .metric-change {
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .metric-change.positive {
+        color: var(--accent-green);
+    }
+    
+    .metric-change.negative {
+        color: #dc3545;
+    }
+    
+    .metric-change.neutral {
+        color: var(--text-secondary);
+    }
+    
+    .time-selector {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 1rem;
+        padding: 1rem;
+        display: flex;
+        justify-content: center;
+    }
+    
+    .btn-group .btn {
+        border-color: var(--card-border);
+        color: var(--text-secondary);
+    }
+    
+    .btn-group .btn.active {
+        background: var(--primary-gradient);
+        border-color: var(--accent-green);
+        color: var(--dark-bg);
+    }
+    
+    .chart-card, .analytics-card, .activity-card {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 1rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .chart-card:hover, .analytics-card:hover, .activity-card:hover {
+        border-color: var(--accent-green);
+        box-shadow: 0 20px 40px rgba(0, 255, 136, 0.1);
+    }
+    
+    .chart-header, .card-header {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--card-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .chart-title, .card-title {
+        margin: 0;
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 1.1rem;
+    }
+    
+    .chart-actions, .card-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .chart-container {
+        padding: 1.5rem;
+        height: 300px;
+        position: relative;
+    }
+    
+    .accuracy-metrics, .peak-hours {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .accuracy-item, .hour-bar {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .accuracy-label, .hour-label {
+        min-width: 100px;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+    
+    .accuracy-bar, .hour-progress {
+        flex: 1;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .accuracy-fill, .hour-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.3s ease;
+    }
+    
+    .accuracy-fill.success, .hour-fill {
+        background: var(--accent-green);
+    }
+    
+    .accuracy-fill.warning {
+        background: #ffc107;
+    }
+    
+    .accuracy-fill.danger {
+        background: #dc3545;
+    }
+    
+    .accuracy-value, .hour-count {
+        min-width: 40px;
+        text-align: right;
+        font-weight: 600;
+        color: var(--accent-green);
+    }
+    
+    .table-dark {
+        background: transparent;
+    }
+    
+    .table-dark th {
+        border-color: var(--card-border);
+        color: var(--text-secondary);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+    }
+    
+    .table-dark td {
+        border-color: var(--card-border);
+        color: var(--text-primary);
+    }
+    
+    .table-hover tbody tr:hover {
+        background: rgba(0, 255, 136, 0.1);
+    }
+    
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .status-badge.success {
+        background: var(--accent-green);
+        color: var(--dark-bg);
+    }
+    
+    .status-badge.warning {
+        background: #ffc107;
+        color: #000;
+    }
+    
+    .status-badge.danger {
+        background: #dc3545;
+        color: #fff;
+    }
+    
+    .confidence-score {
+        font-weight: 600;
+    }
+    
+    .confidence-score.high {
+        color: var(--accent-green);
+    }
+    
+    .confidence-score.medium {
+        color: #ffc107;
+    }
+    
+    .confidence-score.low {
+        color: #dc3545;
+    }
+    
+    @media (max-width: 768px) {
+        .metric-card {
+            padding: 1rem;
+        }
+        
+        .metric-icon {
+            width: 50px;
+            height: 50px;
+            font-size: 1.2rem;
+        }
+        
+        .metric-value {
+            font-size: 1.5rem;
+        }
+        
+        .chart-container {
+            height: 250px;
+        }
+        
+        .accuracy-item, .hour-bar {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        
+        .accuracy-bar, .hour-progress {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let attendanceChart, departmentChart;
+    let currentTimePeriod = 'today';
+    
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+        loadAnalyticsData();
+        initializeCharts();
+        loadRecentActivity();
+    });
+    
+    // Load analytics data
+    async function loadAnalyticsData(period = 'today') {
+        try {
+            const response = await fetch(`/api/attendance/stats?period=${period}`);
+            const payload = await response.json();
+            
+            if (payload.success && payload.data) {
+                const data = payload.data;
+                document.getElementById('totalUsers').textContent = data.known_faces_count || 0;
+                document.getElementById('todayAttendance').textContent = data.total_entries || 0;
+                
+                // Update Charts if data available
+                if (data.trend_data) {
+                    updateTrendChart(data.trend_data);
+                }
+                if (data.dept_dist) {
+                    updateDeptChart(data.dept_dist);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading analytics data:', error);
+        }
+    }
+    
+    // Initialize charts
+    function initializeCharts() {
+        const attendanceCtx = document.getElementById('attendanceChart').getContext('2d');
+        attendanceChart = new Chart(attendanceCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Attendance Trend',
+                    data: [],
+                    borderColor: '#00ff88',
+                    backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                    x: { grid: { color: 'rgba(255, 255, 255, 0.05)' } }
+                }
+            }
+        });
+        
+        const departmentCtx = document.getElementById('departmentChart').getContext('2d');
+        departmentChart = new Chart(departmentCtx, {
+            type: 'doughnut',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: ['#00d4ff', '#00ff88', '#ffc107', '#dc3545', '#6f42c1', '#fd7e14']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { color: 'rgba(255,255,255,0.6)' } } }
+            }
+        });
+    }
+
+    function updateTrendChart(trendData) {
+        const labels = Object.keys(trendData);
+        const values = Object.values(trendData);
+        attendanceChart.data.labels = labels;
+        attendanceChart.data.datasets[0].data = values;
+        attendanceChart.update();
+    }
+
+    function updateDeptChart(deptDist) {
+        const labels = Object.keys(deptDist);
+        const values = Object.values(deptDist);
+        departmentChart.data.labels = labels;
+        departmentChart.data.datasets[0].data = values;
+        departmentChart.update();
+    }
+    
+    // Load recent activity
+    async function loadRecentActivity() {
+        try {
+            const response = await fetch('/api/attendance/daily_report');
+            const payload = await response.json();
+            
+            if (payload.success) {
+                const records = payload.data;
+                const tbody = document.getElementById('activityTableBody');
+                tbody.innerHTML = '';
+                
+                records.slice(0, 10).forEach(record => {
+                    const row = document.createElement('tr');
+                    // Format timestamp to just show time
+                    const time = record.time.split(' ')[1] || record.time;
+                    row.innerHTML = `
+                        <td>${time}</td>
+                        <td>${record.name}</td>
+                        <td>${record.department || 'General'}</td>
+                        <td>Check In</td>
+                        <td><span class="status-badge success">${record.status}</span></td>
+                        <td><span class="confidence-score high">Auto</span></td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading recent activity:', error);
+        }
+    }
+    
+    // Change time period
+    function changeTimePeriod(period) {
+        currentTimePeriod = period;
+        document.querySelectorAll('.time-selector .btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        loadAnalyticsData(period);
+    }
+    
+    function exportChart(chartType) {
+        const canvas = chartType === 'attendance' ? document.getElementById('attendanceChart') : document.getElementById('departmentChart');
+        const url = canvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${chartType}_chart.png`;
+        a.click();
+    }
+    
+    function refreshActivity() {
+        loadRecentActivity();
+        loadAnalyticsData(currentTimePeriod);
+    }
+    
+    // Export activity
+    function exportActivity() {
+        const table = document.querySelector('.activity-table table');
+        const rows = table.querySelectorAll('tr');
+        let csv = [];
+        
+        rows.forEach(row => {
+            const cols = row.querySelectorAll('td, th');
+            const rowData = Array.from(cols).map(col => col.textContent);
+            csv.push(rowData.join(','));
+        });
+        
+        const csvContent = csv.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `activity_export_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        
+        showNotification('Activity exported successfully!', 'success');
+    }
+    
+    // Show notification
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} position-fixed`;
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; animation: slideInRight 0.3s ease';
+        notification.innerHTML = message;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 5000);
+    }
+    
+    // Add CSS animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+{% endblock %}

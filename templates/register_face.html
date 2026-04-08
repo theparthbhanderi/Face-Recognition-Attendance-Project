@@ -1,0 +1,523 @@
+{% extends "base.html" %}
+
+{% block title %}Enrollment | FaceAI Recognition{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-xl-5">
+    <!-- Header Section -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3" data-aos="fade-down">
+        <div>
+            <h1 class="display-5 fw-bold mb-1">Identity <span class="gradient-text">Enrollment</span></h1>
+            <p class="text-secondary mb-0">Capture multi-angle biometric data to create a high-precision recognition profile.</p>
+        </div>
+        <a href="{{ url_for('user_management') }}" class="btn btn-action-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Back to Directory
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <!-- Capture Console -->
+        <div class="col-xl-5" data-aos="fade-right">
+            <div class="data-glass-container h-100">
+                <div class="console-header mb-4">
+                    <span class="badge-dot-live"></span>
+                    <h4 class="mb-0 fw-700">Biometric Console</h4>
+                </div>
+
+                <div class="biometric-stage mb-4">
+                    <div class="stage-frame">
+                        <video id="registration-video" autoplay playsinline muted></video>
+                        <canvas id="registration-canvas" style="display:none;"></canvas>
+                        
+                        <!-- Scanner Overlay -->
+                        <div class="stage-overlay">
+                            <div class="scanner-line"></div>
+                            <div class="scanner-corners">
+                                <span class="corner tl"></span><span class="corner tr"></span>
+                                <span class="corner bl"></span><span class="corner br"></span>
+                            </div>
+                        </div>
+
+                        <!-- Status Indicators -->
+                        <div class="stage-status">
+                            <div class="quality-pill" id="quality-pill">
+                                <i class="bi bi-shield-check"></i>
+                                <span id="quality-text">Standby</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mb-4">
+                    <button id="start-camera" class="btn btn-action-primary flex-grow-1">
+                        <i class="bi bi-camera-video me-2"></i>Initialize Sensor
+                    </button>
+                    <button id="switch-camera" class="btn btn-action-secondary">
+                        <i class="bi bi-arrow-repeat"></i>
+                    </button>
+                </div>
+
+                <div class="quality-monitor">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="label">Signal Quality</span>
+                        <span class="value" id="quality-percent">0%</span>
+                    </div>
+                    <div class="progress-glass">
+                        <div class="progress-bar-glass" id="quality-fill"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enrollment Form -->
+        <div class="col-xl-7" data-aos="fade-left">
+            <div class="data-glass-container h-100">
+                <div class="enrollment-flow mb-5">
+                    <div class="flow-steps">
+                        <div class="step active" id="step1">
+                            <div class="dot">1</div>
+                            <span>Identity</span>
+                        </div>
+                        <div class="step-line"></div>
+                        <div class="step" id="step2">
+                            <div class="dot">2</div>
+                            <span>Biometrics</span>
+                        </div>
+                        <div class="step-line"></div>
+                        <div class="step" id="step3">
+                            <div class="dot">3</div>
+                            <span>Registry</span>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="registration-form" class="row g-4">
+                    <div class="col-md-6">
+                        <label class="filter-label">Full Name</label>
+                        <div class="input-group-glass">
+                            <i class="bi bi-person"></i>
+                            <input type="text" id="full-name" class="form-control" required placeholder="Legal full name">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="filter-label">Official Email</label>
+                        <div class="input-group-glass">
+                            <i class="bi bi-envelope"></i>
+                            <input type="email" id="email" class="form-control" placeholder="name@organization.com">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="filter-label">Department</label>
+                        <select id="department" class="form-select-glass">
+                            <option value="">Select Unit</option>
+                            <option value="engineering">Engineering</option>
+                            <option value="marketing">Marketing</option>
+                            <option value="sales">Sales</option>
+                            <option value="hr">Human Resources</option>
+                            <option value="finance">Finance</option>
+                            <option value="operations">Operations</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="filter-label">Employee ID</label>
+                        <div class="input-group-glass">
+                            <i class="bi bi-card-text"></i>
+                            <input type="text" id="employee-id" class="form-control" placeholder="Registry Code">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="filter-label">Age</label>
+                        <div class="input-group-glass">
+                            <i class="bi bi-calendar3"></i>
+                            <input type="number" id="age" class="form-control" placeholder="Years">
+                        </div>
+                    </div>
+
+                    <div class="col-12 mt-5">
+                        <label class="filter-label mb-3">Multi-Angle Verification</label>
+                        <div class="angles-grid">
+                            <div class="angle-box" id="preview-front" onclick="captureFace('front')">
+                                <div class="angle-preview">
+                                    <i class="bi bi-camera"></i>
+                                    <img id="img-front" src="" style="display:none">
+                                </div>
+                                <span class="angle-label">Front View</span>
+                                <button type="button" class="btn-capture" id="capture-front">Capture</button>
+                            </div>
+                            <div class="angle-box" id="preview-left" onclick="captureFace('left')">
+                                <div class="angle-preview">
+                                    <i class="bi bi-camera"></i>
+                                    <img id="img-left" src="" style="display:none">
+                                </div>
+                                <span class="angle-label">Left Profile</span>
+                                <button type="button" class="btn-capture" id="capture-left">Capture</button>
+                            </div>
+                            <div class="angle-box" id="preview-right" onclick="captureFace('right')">
+                                <div class="angle-preview">
+                                    <i class="bi bi-camera"></i>
+                                    <img id="img-right" src="" style="display:none">
+                                </div>
+                                <span class="angle-label">Right Profile</span>
+                                <button type="button" class="btn-capture" id="capture-right">Capture</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 mt-5 d-flex gap-3">
+                        <button type="submit" class="btn btn-action-primary flex-grow-1" id="save-registration">
+                            <span id="save-btn-content">
+                                <i class="bi bi-person-check-fill me-2"></i>💾 Save & Complete Enrollment
+                            </span>
+                            <span id="save-btn-loading" style="display:none">
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                Securing Biometric Data...
+                            </span>
+                        </button>
+                        <button type="button" class="btn btn-action-secondary" id="reset-registration">
+                            <i class="bi bi-arrow-counterclockwise me-2"></i>Reset
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .gradient-text {
+        background: linear-gradient(135deg, #00ff88 0%, #00d2ff 100%);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        display: inline-block;
+    }
+
+    /* Buttons */
+    .btn-action-primary {
+        background: var(--accent-green);
+        color: var(--dark-bg);
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 700;
+        transition: all 0.3s ease;
+    }
+
+    .btn-action-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 255, 136, 0.3);
+        color: var(--dark-bg);
+    }
+
+    .btn-action-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-action-secondary {
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 0.8rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    /* Data Glass */
+    .data-glass-container {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 32px;
+        padding: 2.5rem;
+    }
+
+    .badge-dot-live {
+        display: inline-block;
+        width: 8px; height: 8px;
+        background: #00ff88;
+        border-radius: 50%;
+        box-shadow: 0 0 10px #00ff88;
+        margin-right: 10px;
+        animation: blink 1.5s infinite;
+    }
+
+    /* Biometric Stage */
+    .biometric-stage {
+        position: relative;
+        border-radius: 24px;
+        overflow: hidden;
+        background: #000;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .stage-frame { position: relative; aspect-ratio: 4/3; }
+    #registration-video { width: 100%; height: 100%; object-fit: cover; }
+
+    .stage-overlay { position: absolute; inset: 0; pointer-events: none; }
+    .scanner-line {
+        position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+        background: linear-gradient(90deg, transparent, var(--accent-green), transparent);
+        box-shadow: 0 0 15px var(--accent-green);
+        animation: scan-v 3s linear infinite;
+    }
+
+    @keyframes scan-v { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+
+    .corner { position: absolute; width: 25px; height: 25px; border: 3px solid var(--accent-green); }
+    .corner.tl { top: 20px; left: 20px; border-right: none; border-bottom: none; border-top-left-radius: 12px; }
+    .corner.tr { top: 20px; right: 20px; border-left: none; border-bottom: none; border-top-right-radius: 12px; }
+    .corner.bl { bottom: 20px; left: 20px; border-right: none; border-top: none; border-bottom-left-radius: 12px; }
+    .corner.br { bottom: 20px; right: 20px; border-left: none; border-top: none; border-bottom-right-radius: 12px; }
+
+    .stage-status { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); }
+    .quality-pill {
+        background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 0.5rem 1.2rem; border-radius: 999px;
+        color: #fff; font-weight: 700; font-size: 0.85rem;
+        display: flex; align-items: center; gap: 0.6rem;
+    }
+
+    /* Quality Monitor */
+    .progress-glass { height: 6px; background: rgba(255, 255, 255, 0.05); border-radius: 999px; overflow: hidden; }
+    .progress-bar-glass { height: 100%; background: var(--accent-green); width: 0; transition: all 0.5s ease; box-shadow: 0 0 10px var(--accent-green); }
+
+    /* Flow Steps */
+    .flow-steps { display: flex; align-items: center; justify-content: space-between; }
+    .step { display: flex; flex-direction: column; align-items: center; gap: 0.8rem; opacity: 0.3; transition: all 0.3s; }
+    .step.active { opacity: 1; }
+    .step.completed { opacity: 1; }
+    .step.completed .dot { background: var(--accent-green); color: var(--dark-bg); }
+    .step .dot { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--accent-green); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; }
+    .step span { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+    .step-line { flex: 1; height: 2px; background: rgba(255, 255, 255, 0.1); margin: 0 1rem; margin-top: -1.5rem; }
+
+    /* Inputs */
+    .filter-label { font-size: 0.8rem; font-weight: 700; color: rgba(255, 255, 255, 0.4); margin-bottom: 0.6rem; text-transform: uppercase; }
+    .input-group-glass { position: relative; display: flex; align-items: center; }
+    .input-group-glass i { position: absolute; left: 1.2rem; color: rgba(255, 255, 255, 0.3); }
+    .input-group-glass .form-control { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 0.8rem 1rem 0.8rem 3rem; color: #fff; }
+    .form-select-glass { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 0.8rem 1.2rem; color: #fff; width: 100%; }
+
+    /* Angles Grid */
+    .angles-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .angle-box { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 1rem; text-align: center; }
+    .angle-preview { aspect-ratio: 1; background: rgba(0, 0, 0, 0.3); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 0.8rem; overflow: hidden; }
+    .angle-preview i { font-size: 1.5rem; color: rgba(255, 255, 255, 0.1); }
+    .angle-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .angle-label { display: block; font-size: 0.75rem; font-weight: 700; color: rgba(255, 255, 255, 0.5); margin-bottom: 0.8rem; }
+    .btn-capture { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #fff; padding: 0.4rem; font-size: 0.8rem; font-weight: 700; transition: all 0.2s; }
+    .btn-capture:hover:not(:disabled) { background: var(--accent-green); color: var(--dark-bg); }
+    .btn-capture:disabled { opacity: 0.3; cursor: not-allowed; }
+    .angle-box.captured { border-color: var(--accent-green); background: rgba(0, 255, 136, 0.05); }
+    .angle-box.captured .angle-preview i { display: none; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let video = document.getElementById('registration-video');
+    let canvas = document.getElementById('registration-canvas');
+    let form = document.getElementById('registration-form');
+    let currentStream = null;
+    let capturedFaces = {
+        front: null,
+        left: null,
+        right: null
+    };
+    let currentStep = 1;
+    
+    // Camera management
+    const startCamera = document.getElementById('start-camera');
+    const switchButton = document.getElementById('switch-camera');
+    
+    startCamera.addEventListener('click', startCameraStream);
+    switchButton.addEventListener('click', switchCameraStream);
+    
+    async function startCameraStream() {
+        try {
+            currentStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    width: { ideal: 640 },
+                    height: { ideal: 480 }
+                } 
+            });
+            
+            video.srcObject = currentStream;
+            startCamera.disabled = true;
+            switchButton.disabled = false;
+
+            // Enable capture buttons when camera is active
+            updateQualityIndicator('excellent');
+            document.getElementById('quality-percent').textContent = '100%';
+            document.getElementById('quality-fill').style.width = '100%';
+        } catch (error) {
+            console.error('Error accessing camera:', error);
+            alert('CRITICAL: Camera access failed! ' + error.message);
+            updateQualityIndicator('poor');
+        }
+    }
+    
+    function switchCameraStream() {
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+        }
+        startCameraStream();
+    }
+    
+    // Face capture buttons (Redundant listeners removed, using onclick attributes)
+    
+    async function captureFace(angle) {
+        if (!currentStream) {
+            alert('WAIT! Camera is NOT initialized. Please click the "Initialize Sensor" button above first.');
+            return;
+        }
+        
+        const context = canvas.getContext('2d');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        const imageData = canvas.toDataURL('image/jpeg');
+        capturedFaces[angle] = imageData;
+        
+        // Update preview
+        const container = document.getElementById(`preview-${angle}`);
+        const img = document.getElementById(`img-${angle}`);
+        
+        container.classList.add('captured');
+        img.src = imageData;
+        img.style.display = 'block';
+        
+        // Hide the camera icon
+        const icon = container.querySelector('.bi-camera');
+        if (icon) icon.style.display = 'none';
+        
+        // Update progress and check state
+        updateProgress();
+        checkAllFacesCaptured();
+    }
+    
+    function updateProgress() {
+        const progressFill = document.getElementById('progress-fill');
+        const capturedCount = Object.values(capturedFaces).filter(face => face !== null).length;
+        const progress = (capturedCount / 3) * 100;
+        
+        progressFill.style.width = `${progress}%`;
+        updateStepIndicator(capturedCount + 1);
+    }
+    
+    function updateStepIndicator(step) {
+        document.querySelectorAll('.step').forEach((el, index) => {
+            el.classList.toggle('active', index + 1 === step);
+        });
+        currentStep = step;
+    }
+    
+    function checkAllFacesCaptured() {
+        const allCaptured = Object.values(capturedFaces).every(face => face !== null);
+        document.getElementById('save-registration').disabled = !allCaptured;
+    }
+    
+    function updateQualityIndicator(quality) {
+        const qualityFill = document.getElementById('quality-fill');
+        const qualityText = document.getElementById('quality-text');
+        
+        qualityFill.className = `quality-fill ${quality}`;
+        
+        const qualityMessages = {
+            'good': 'Good Quality',
+            'fair': 'Fair Quality', 
+            'excellent': 'Excellent Quality',
+            'poor': 'Poor Quality'
+        };
+        
+        qualityText.textContent = qualityMessages[quality] || 'No Face';
+    }
+    
+    // Form submission
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Final click validation for captures
+        const missing = Object.keys(capturedFaces).filter(k => capturedFaces[k] === null);
+        if (missing.length > 0) {
+            alert('MISSING BIOMETRICS: Please capture ' + missing.join(', ') + ' views before saving.');
+            return;
+        }
+
+        // Collect values directly by id (form fields don't have name attributes)
+        const registrationData = {
+            fullName: document.getElementById('full-name').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            department: document.getElementById('department').value,
+            employeeId: document.getElementById('employee-id').value.trim(),
+            age: document.getElementById('age').value,
+            faces: capturedFaces
+        };
+        
+        // Show loading state
+        const saveBtn = document.getElementById('save-registration');
+        const btnContent = document.getElementById('save-btn-content');
+        const btnLoading = document.getElementById('save-btn-loading');
+        
+        saveBtn.disabled = true;
+        btnContent.style.display = 'none';
+        btnLoading.style.display = 'inline-block';
+        
+        try {
+            const response = await fetch('/register_face', {
+                method: 'POST',
+                body: JSON.stringify(registrationData),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('Registration successful!');
+                window.location.href = "{{ url_for('user_management') }}";
+            } else {
+                alert(`Registration failed: ${result.message}`);
+                saveBtn.disabled = false;
+                btnContent.style.display = 'inline-block';
+                btnLoading.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred during registration');
+            saveBtn.disabled = false;
+            btnContent.style.display = 'inline-block';
+            btnLoading.style.display = 'none';
+        }
+    });
+    
+    // Reset functionality
+    document.getElementById('reset-registration').addEventListener('click', resetCaptures);
+    
+    function resetCaptures() {
+        capturedFaces = { front: null, left: null, right: null };
+        
+        document.querySelectorAll('.angle-box').forEach(box => {
+            box.classList.remove('captured');
+            const img = box.querySelector('img');
+            if (img) {
+                img.src = '';
+                img.style.display = 'none';
+            }
+            const icon = box.querySelector('.bi-camera');
+            if (icon) icon.style.display = 'block';
+        });
+        
+        updateProgress();
+        updateStepIndicator(1);
+    }
+    
+    // Start camera automatically
+    document.addEventListener('DOMContentLoaded', () => {
+        updateQualityIndicator('no-face');
+    });
+</script>
+{% endblock %}

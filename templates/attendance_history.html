@@ -1,0 +1,528 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Intelligence | FaceAI{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-xl-5">
+    <!-- Header Section -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3">
+        <div data-aos="fade-right">
+            <h1 class="display-5 fw-bold mb-1">Attendance <span class="gradient-text">Intelligence</span></h1>
+            <p class="text-secondary mb-0">Monitor, filter, and analyze recognition activity across your organization.</p>
+        </div>
+        <div class="d-flex gap-2" data-aos="fade-left">
+            <button class="btn btn-action-secondary" onclick="exportToCSV()">
+                <i class="bi bi-cloud-download me-2"></i>Export CSV
+            </button>
+            <a href="{{ url_for('attendance') }}" class="btn btn-action-primary">
+                <i class="bi bi-plus-lg me-2"></i>Live Scan
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Stats Row -->
+    <div class="row g-4 mb-5" data-aos="fade-up">
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-glass-card">
+                <div class="card-icon blue"><i class="bi bi-collection"></i></div>
+                <div class="card-info">
+                    <span class="label">Total Records</span>
+                    <h3 id="totalCount">{{ attendance_data|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-glass-card">
+                <div class="card-icon green"><i class="bi bi-person-check"></i></div>
+                <div class="card-info">
+                    <span class="label">Present Today</span>
+                    <h3 id="presentCount">{{ attendance_data|selectattr('status', 'equalto', 'Present')|list|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-glass-card">
+                <div class="card-icon orange"><i class="bi bi-person-plus"></i></div>
+                <div class="card-info">
+                    <span class="label">New Registrations</span>
+                    <h3 id="registeredCount">{{ attendance_data|selectattr('status', 'equalto', 'Registered')|list|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-glass-card">
+                <div class="card-icon purple"><i class="bi bi-people"></i></div>
+                <div class="card-info">
+                    <span class="label">Unique Identities</span>
+                    <h3 id="uniqueCount">{{ attendance_data|map(attribute='name')|unique|list|length }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter & Table Section -->
+    <div class="data-glass-container" data-aos="fade-up" data-aos-delay="100">
+        <div class="filter-toolbar mb-4">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="filter-label">Search Identity</label>
+                    <div class="input-group-glass">
+                        <i class="bi bi-search"></i>
+                        <input type="text" class="form-control" id="nameFilter" placeholder="Name or ID...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="filter-label">Date Range</label>
+                    <div class="input-group-glass">
+                        <i class="bi bi-calendar3"></i>
+                        <input type="date" class="form-control" id="dateFilter">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="filter-label">Activity Type</label>
+                    <select class="form-select-glass" id="statusFilter">
+                        <option value="">All Activities</option>
+                        <option value="Present">Present</option>
+                        <option value="Registered">Registered</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex justify-content-md-end">
+                    <button class="btn btn-glass-outline w-100 w-md-auto" onclick="resetFilters()">
+                        <i class="bi bi-arrow-counterclockwise me-2"></i>Reset Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive-glass">
+            <table class="table-glass" id="attendanceTable">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>User Identity</th>
+                        <th>Department</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in attendance_data %}
+                    <tr class="activity-row" 
+                        data-date="{{ record.date }}" 
+                        data-name="{{ record.name.lower() }}" 
+                        data-status="{{ record.status }}">
+                        <td class="time-cell">
+                            <span class="date">{{ record.date }}</span>
+                            <span class="time">{{ record.time }}</span>
+                        </td>
+                        <td class="user-cell">
+                            <div class="user-avatar">
+                                {{ record.name[0]|upper }}
+                            </div>
+                            <div class="user-info">
+                                <span class="name">{{ record.name }}</span>
+                                <span class="id">{{ record.employee_id }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="dept-pill">{{ record.class or 'Default' }}</span>
+                        </td>
+                        <td>
+                            {% if record.status == 'Present' %}
+                                <span class="status-pill present">
+                                    <span class="dot"></span>Present
+                                </span>
+                            {% elif record.status == 'Registered' %}
+                                <span class="status-pill registered">
+                                    <span class="dot"></span>Registered
+                                </span>
+                            {% else %}
+                                <span class="status-pill other">
+                                    <span class="dot"></span>{{ record.status }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <button class="btn-icon-glass delete" title="Delete Log" 
+                                    onclick="deleteRecord('{{ record.id }}', '{{ record.timestamp }}', '{{ record.name }}')">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr class="empty-row">
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <i class="bi bi-inbox"></i>
+                                <p>No recognition activity found for this period.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .gradient-text {
+        background: linear-gradient(135deg, #00ff88 0%, #00d2ff 100%);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        display: inline-block;
+    }
+
+    /* Buttons */
+    .btn-action-primary {
+        background: var(--accent-green);
+        color: var(--dark-bg);
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 700;
+        transition: all 0.3s ease;
+    }
+
+    .btn-action-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 255, 136, 0.3);
+        color: var(--dark-bg);
+    }
+
+    .btn-action-secondary {
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 0.8rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-action-secondary:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+    }
+
+    /* Stat Cards */
+    .stat-glass-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+        transition: transform 0.3s ease;
+    }
+
+    .stat-glass-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .card-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    .card-icon.blue { background: rgba(0, 210, 255, 0.15); color: #00d2ff; }
+    .card-icon.green { background: rgba(0, 255, 136, 0.15); color: #00ff88; }
+    .card-icon.orange { background: rgba(255, 165, 0, 0.15); color: #ffa500; }
+    .card-icon.purple { background: rgba(160, 32, 240, 0.15); color: #a020f0; }
+
+    .card-info .label { font-size: 0.8rem; color: rgba(255, 255, 255, 0.5); font-weight: 600; }
+    .card-info h3 { font-size: 1.8rem; font-weight: 800; margin: 0; }
+
+    /* Data Container */
+    .data-glass-container {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 24px;
+        padding: 2rem;
+    }
+
+    .filter-label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.4);
+        margin-bottom: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .input-group-glass {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-group-glass i {
+        position: absolute;
+        left: 1.2rem;
+        color: rgba(255, 255, 255, 0.3);
+    }
+
+    .input-group-glass .form-control {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 0.8rem 1rem 0.8rem 3rem;
+        color: #fff;
+        transition: all 0.3s ease;
+    }
+
+    .input-group-glass .form-control:focus {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: var(--accent-green);
+        box-shadow: none;
+    }
+
+    .form-select-glass {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 0.8rem 1.2rem;
+        color: #fff;
+        width: 100%;
+        cursor: pointer;
+    }
+
+    .btn-glass-outline {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.6);
+        padding: 0.8rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-glass-outline:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
+    }
+
+    /* Table Glass */
+    .table-glass {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 0.8rem;
+    }
+
+    .table-glass th {
+        padding: 1rem 1.5rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.4);
+        text-transform: uppercase;
+        border: none;
+    }
+
+    .activity-row {
+        background: rgba(255, 255, 255, 0.02);
+        transition: all 0.3s ease;
+    }
+
+    .activity-row:hover {
+        background: rgba(255, 255, 255, 0.05);
+        transform: scale(1.002);
+    }
+
+    .activity-row td {
+        padding: 1.2rem 1.5rem;
+        vertical-align: middle;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .activity-row td:first-child { border-left: 1px solid rgba(255, 255, 255, 0.05); border-top-left-radius: 16px; border-bottom-left-radius: 16px; }
+    .activity-row td:last-child { border-right: 1px solid rgba(255, 255, 255, 0.05); border-top-right-radius: 16px; border-bottom-right-radius: 16px; }
+
+    .time-cell .date { display: block; font-weight: 700; color: #fff; }
+    .time-cell .time { font-size: 0.85rem; color: rgba(255, 255, 255, 0.5); }
+
+    .user-cell { display: flex; align-items: center; gap: 1rem; }
+    .user-avatar {
+        width: 42px;
+        height: 42px;
+        background: linear-gradient(135deg, var(--accent-green), #00d2ff);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        color: var(--dark-bg);
+    }
+
+    .user-info .name { display: block; font-weight: 700; color: #fff; }
+    .user-info .id { font-size: 0.8rem; color: rgba(255, 255, 255, 0.4); }
+
+    .dept-pill {
+        padding: 0.4rem 0.8rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 1rem;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        font-weight: 700;
+    }
+
+    .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
+
+    .status-pill.present { background: rgba(0, 255, 136, 0.1); color: #00ff88; }
+    .status-pill.present .dot { background: #00ff88; box-shadow: 0 0 8px #00ff88; }
+
+    .status-pill.registered { background: rgba(255, 165, 0, 0.1); color: #ffa500; }
+    .status-pill.registered .dot { background: #ffa500; box-shadow: 0 0 8px #ffa500; }
+
+    .btn-icon-glass {
+        width: 38px;
+        height: 38px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        color: rgba(255, 255, 255, 0.5);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .btn-icon-glass:hover {
+        background: rgba(255, 77, 77, 0.1);
+        border-color: rgba(255, 77, 77, 0.3);
+        color: #ff4d4d;
+    }
+
+    .empty-state {
+        padding: 4rem;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.3);
+    }
+
+    .empty-state i { font-size: 3rem; margin-bottom: 1rem; display: block; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Filter functionality
+    document.getElementById('dateFilter').addEventListener('change', filterTable);
+    document.getElementById('nameFilter').addEventListener('input', filterTable);
+    document.getElementById('statusFilter').addEventListener('change', filterTable);
+
+    function filterTable() {
+        const dateFilter = document.getElementById('dateFilter').value;
+        const nameFilter = document.getElementById('nameFilter').value.toLowerCase();
+        const statusFilter = document.getElementById('statusFilter').value;
+        const rows = document.querySelectorAll('#attendanceTable tbody tr.activity-row');
+
+        let visibleCount = 0;
+        let presentCount = 0;
+        let registeredCount = 0;
+        let uniqueNames = new Set();
+
+        rows.forEach(row => {
+            const date = row.getAttribute('data-date');
+            const name = row.getAttribute('data-name');
+            const status = row.getAttribute('data-status');
+
+            const dateMatch = !dateFilter || date === dateFilter;
+            const nameMatch = !nameFilter || name.includes(nameFilter);
+            const statusMatch = !statusFilter || status === statusFilter;
+
+            if (dateMatch && nameMatch && statusMatch) {
+                row.style.display = '';
+                visibleCount++;
+                uniqueNames.add(name);
+                if (status === 'Present') presentCount++;
+                if (status === 'Registered') registeredCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // Update stats based on filtered results
+        document.getElementById('totalCount').textContent = visibleCount;
+        document.getElementById('presentCount').textContent = presentCount;
+        document.getElementById('registeredCount').textContent = registeredCount;
+        document.getElementById('uniqueCount').textContent = uniqueNames.size;
+    }
+
+    function resetFilters() {
+        document.getElementById('dateFilter').value = '';
+        document.getElementById('nameFilter').value = '';
+        document.getElementById('statusFilter').value = '';
+        filterTable();
+    }
+
+    function exportToCSV() {
+        let csv = 'Timestamp,Identity,Department,Status\n';
+        const rows = document.querySelectorAll('#attendanceTable tbody tr.activity-row:not([style*="display: none"])');
+        
+        rows.forEach(row => {
+            const timeCell = row.querySelector('.time-cell');
+            const timestamp = `${timeCell.querySelector('.date').textContent} ${timeCell.querySelector('.time').textContent}`;
+            const identity = row.querySelector('.user-info .name').textContent.trim();
+            const dept = row.querySelector('.dept-pill').textContent.trim();
+            const status = row.querySelector('.status-pill').textContent.trim();
+            
+            csv += `"${timestamp}","${identity}","${dept}","${status}"\n`;
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `FaceAI_Report_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    }
+
+    async function deleteRecord(id, timestamp, name) {
+        if (!id || id === 'None') {
+            alert('Deleting legacy CSV records is not supported via this UI yet.');
+            return;
+        }
+
+        if (confirm(`Remove the attendance log for ${name} at ${timestamp}?`)) {
+            try {
+                const response = await fetch(`/api/attendance/${id}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Record deleted successfully');
+                    location.reload();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while deleting the record');
+            }
+        }
+    }
+</script>
+{% endblock %}

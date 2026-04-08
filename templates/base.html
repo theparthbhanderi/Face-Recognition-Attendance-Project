@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI Face Recognition System{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #00d4ff 0%, #00ff88 50%, #00d4ff 100%);
+            --dark-bg: #0a0a0a;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --accent-green: #00ff88;
+            --accent-blue: #00d4ff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 255, 136, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(0, 212, 255, 0.05) 0%, transparent 50%);
+        }
+        
+        /* Navigation */
+        .navbar {
+            background: rgba(10, 10, 10, 0.82) !important;
+            backdrop-filter: blur(24px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 0.85rem 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+        }
+        
+        .navbar .container {
+            gap: 1rem;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--text-primary) !important;
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+        }
+        
+        .brand-mark {
+            width: 2.8rem;
+            height: 2.8rem;
+            border-radius: 0.9rem;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 255, 136, 0.2));
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+        
+        .brand-mark i {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.35rem;
+        }
+        
+        .brand-copy {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+        
+        .brand-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+        
+        .brand-subtitle {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        
+        .navbar-toggler {
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 0.8rem;
+            padding: 0.45rem 0.7rem;
+            background: rgba(255, 255, 255, 0.04);
+        }
+        
+        .navbar-toggler:focus {
+            box-shadow: 0 0 0 0.2rem rgba(0, 255, 136, 0.18);
+        }
+        
+        .nav-cluster {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.35rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        
+        .nav-link {
+            color: var(--text-secondary) !important;
+            font-weight: 500;
+            padding: 0.7rem 1rem !important;
+            margin: 0;
+            border-radius: 999px;
+            transition: all 0.3s ease;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            color: var(--text-primary) !important;
+            background: rgba(255, 255, 255, 0.07);
+            transform: translateY(-1px);
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            left: 1rem;
+            right: 1rem;
+            bottom: 0.45rem;
+            height: 2px;
+            background: var(--primary-gradient);
+            border-radius: 999px;
+            transform: scaleX(0);
+            transform-origin: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .nav-link:hover::after, .nav-link.active::after {
+            transform: scaleX(1);
+        }
+        
+        .nav-utility {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            margin-left: 1.25rem;
+        }
+        
+        .nav-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            padding: 0.7rem 0.95rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-primary);
+        }
+        
+        .status-dot {
+            width: 0.55rem;
+            height: 0.55rem;
+            border-radius: 50%;
+            background: var(--accent-green);
+            box-shadow: 0 0 12px rgba(0, 255, 136, 0.7);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .nav-status-copy {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+        
+        .nav-status-label {
+            font-size: 0.68rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        
+        .nav-status-value {
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+        
+        .user-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.5rem 0.8rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+        }
+        
+        .user-avatar-chip {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: rgba(0, 255, 136, 0.14);
+            color: var(--accent-green);
+        }
+        
+        .quick-nav-btn {
+            padding-inline: 1.25rem;
+        }
+        
+        .dropdown-menu-dark {
+            background: rgba(15, 15, 15, 0.96);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+        }
+        
+        .dropdown-item {
+            color: var(--text-secondary);
+            border-radius: 0.75rem;
+            padding: 0.7rem 0.9rem;
+            margin: 0.2rem 0.35rem;
+        }
+        
+        .dropdown-item:hover,
+        .dropdown-item:focus {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-primary);
+        }
+        
+        /* Buttons */
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            color: var(--dark-bg);
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+            border-radius: 2rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
+        }
+        
+        .btn-outline-primary {
+            background: transparent;
+            border: 2px solid var(--accent-green);
+            color: var(--accent-green);
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+            border-radius: 2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-outline-primary:hover {
+            background: var(--accent-green);
+            color: var(--dark-bg);
+            transform: translateY(-2px);
+        }
+        
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 1rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border-color: var(--accent-green);
+        }
+        
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid var(--card-border);
+            font-weight: 600;
+        }
+        
+        /* Main Content */
+        main {
+            padding-top: 118px;
+            min-height: 100vh;
+        }
+        
+        /* Hero Section */
+        .hero-section {
+            padding: 4rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--primary-gradient);
+            opacity: 0.05;
+            z-index: -1;
+        }
+        
+        /* Video Container */
+        .video-container {
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-radius: 1rem;
+            overflow: hidden;
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+        
+        .video-container::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: var(--primary-gradient);
+            border-radius: 1rem;
+            z-index: -1;
+            opacity: 0.5;
+        }
+        
+        #video-feed {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 0.8rem;
+        }
+        
+        /* Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .pulsing {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        /* Footer */
+        .footer {
+            background: rgba(10, 10, 10, 0.92);
+            border-top: 1px solid var(--card-border);
+            padding: 2rem 0;
+            margin-top: auto;
+        }
+        
+        .flash-area {
+            padding-top: 1rem;
+        }
+        
+        .alert {
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1rem;
+            backdrop-filter: blur(12px);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-section {
+                padding: 2rem 0;
+            }
+            
+            .btn-primary, .btn-outline-primary {
+                padding: 0.6rem 1.5rem;
+                font-size: 0.9rem;
+            }
+            
+            .navbar {
+                padding: 0.75rem 0;
+            }
+            
+            .nav-cluster {
+                flex-direction: column;
+                align-items: stretch;
+                border-radius: 1.25rem;
+                margin-top: 1rem;
+            }
+            
+            .nav-link {
+                justify-content: flex-start;
+            }
+            
+            .nav-utility {
+                margin: 1rem 0 0;
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .nav-status-pill,
+            .user-chip,
+            .quick-nav-btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            main {
+                padding-top: 106px;
+            }
+        }
+        
+        /* Loading Animation */
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--card-border);
+            border-top: 3px solid var(--accent-green);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <span class="brand-mark">
+                    <i class="bi bi-person-bounding-box"></i>
+                </span>
+                <span class="brand-copy">
+                    <span class="brand-title">FaceAI</span>
+                    <span class="brand-subtitle">Recognition Attendance</span>
+                </span>
+            </a>
+            <button class="navbar-toggler text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Toggle navigation">
+                <i class="bi bi-list fs-4"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto nav-cluster">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" 
+                           href="{{ url_for('index') }}">
+                            <i class="bi bi-house-door"></i>
+                            <span>Home</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'attendance' %}active{% endif %}" 
+                           href="{{ url_for('attendance') }}">
+                            <i class="bi bi-camera-video"></i>
+                            <span>Live Attendance</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'attendance_history' %}active{% endif %}" 
+                           href="{{ url_for('attendance_history') }}">
+                            <i class="bi bi-clock-history"></i>
+                            <span>History</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'register_face' %}active{% endif %}" 
+                           href="{{ url_for('register_face') }}">
+                            <i class="bi bi-person-plus"></i>
+                            <span>Register Face</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'user_management' %}active{% endif %}" 
+                           href="{{ url_for('user_management') }}">
+                            <i class="bi bi-people"></i>
+                            <span>Users</span>
+                        </a>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'analytics_dashboard' %}active{% endif %}" 
+                           href="{{ url_for('analytics_dashboard') }}">
+                            <i class="bi bi-bar-chart-line"></i>
+                            <span>Analytics</span>
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['admin_dashboard', 'add_face'] %}active{% endif %}" 
+                           href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-shield-lock"></i>
+                            <span>Admin</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">
+                                    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('add_face') }}">
+                                    <i class="bi bi-person-plus me-2"></i>Add New Face
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                </ul>
+                
+                <div class="nav-utility">
+                    <div class="nav-status-pill">
+                        <span class="status-dot"></span>
+                        <span class="nav-status-copy">
+                            <span class="nav-status-label">System</span>
+                            <span class="nav-status-value">Face Recognition Ready</span>
+                        </span>
+                    </div>
+                    {% if current_user.is_authenticated %}
+                        <div class="user-chip">
+                            <span class="user-avatar-chip">
+                                <i class="bi bi-person"></i>
+                            </span>
+                            <span>{{ current_user.username }}</span>
+                        </div>
+                        <a href="{{ url_for('attendance') }}" class="btn btn-primary btn-sm quick-nav-btn">
+                            <i class="bi bi-lightning-charge me-1"></i>Start Scan
+                        </a>
+                        <a href="{{ url_for('logout') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-box-arrow-right me-1"></i>Logout
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('attendance') }}" class="btn btn-outline-primary btn-sm quick-nav-btn">
+                            <i class="bi bi-camera-video me-1"></i>Open Attendance
+                        </a>
+                        <a href="{{ url_for('login') }}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="container flash-area">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="container text-center">
+            <span class="text-secondary">© <span id="footerYear"></span> FaceAI Recognition Attendance.</span>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const footerYear = document.getElementById('footerYear');
+            if (footerYear) {
+                footerYear.textContent = new Date().getFullYear();
+            }
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

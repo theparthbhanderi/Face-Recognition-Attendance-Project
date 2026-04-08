@@ -1,0 +1,588 @@
+{% extends "base.html" %}
+
+{% block title %}Identity Hub | FaceAI{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-xl-5">
+    <!-- Header Section -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3">
+        <div data-aos="fade-right">
+            <h1 class="display-5 fw-bold mb-1">Identity <span class="gradient-text">Hub</span></h1>
+            <p class="text-secondary mb-0">Manage registered individuals, security roles, and recognition profiles.</p>
+        </div>
+        <div class="d-flex gap-2" data-aos="fade-left">
+            <a href="{{ url_for('register_face') }}" class="btn btn-action-primary">
+                <i class="bi bi-person-plus me-2"></i>New Enrollment
+            </a>
+            <button class="btn btn-action-secondary" onclick="showBulkImportModal()">
+                <i class="bi bi-file-earmark-arrow-up me-2"></i>Bulk Import
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="row g-4 mb-5" data-aos="fade-up">
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-glass-card">
+                <div class="card-icon blue"><i class="bi bi-people"></i></div>
+                <div class="card-info">
+                    <span class="label">Total Enrolled</span>
+                    <h3 id="totalUsers">--</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-glass-card">
+                <div class="card-icon green"><i class="bi bi-shield-check"></i></div>
+                <div class="card-info">
+                    <span class="label">Active Status</span>
+                    <h3 id="activeUsers">--</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-glass-card">
+                <div class="card-icon orange"><i class="bi bi-person-plus"></i></div>
+                <div class="card-info">
+                    <span class="label">New Today</span>
+                    <h3 id="newUsers">--</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-glass-card">
+                <div class="card-icon purple"><i class="bi bi-clock-history"></i></div>
+                <div class="card-info">
+                    <span class="label">Last Registry Update</span>
+                    <h3 id="lastUpdated">--:--</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls Bar -->
+    <div class="data-glass-container mb-4" data-aos="fade-up">
+        <div class="row g-3 align-items-end">
+            <div class="col-xl-4 col-lg-5">
+                <label class="filter-label">Search Directory</label>
+                <div class="input-group-glass">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="searchInput" class="form-control" placeholder="Search by name, email, or employee ID...">
+                </div>
+            </div>
+            <div class="col-xl-2 col-lg-3 col-md-4">
+                <label class="filter-label">Department</label>
+                <select id="departmentFilter" class="form-select-glass">
+                    <option value="">All Units</option>
+                    <option value="engineering">Engineering</option>
+                    <option value="marketing">Marketing</option>
+                    <option value="sales">Sales</option>
+                    <option value="hr">Human Resources</option>
+                    <option value="finance">Finance</option>
+                    <option value="operations">Operations</option>
+                </select>
+            </div>
+            <div class="col-xl-2 col-lg-2 col-md-4">
+                <label class="filter-label">Status</label>
+                <select id="statusFilter" class="form-select-glass">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="suspended">Suspended</option>
+                </select>
+            </div>
+            <div class="col-xl-2 col-lg-2 col-md-4">
+                <label class="filter-label">Access Level</label>
+                <select id="roleFilter" class="form-select-glass">
+                    <option value="">All Levels</option>
+                    <option value="admin">Administrator</option>
+                    <option value="manager">Manager</option>
+                    <option value="user">Standard User</option>
+                </select>
+            </div>
+            <div class="col-xl-2 col-lg-12 d-flex justify-content-xl-end">
+                <button class="btn btn-glass-outline w-100" onclick="clearFilters()">
+                    <i class="bi bi-filter-left me-2"></i>Clear Filters
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Directory Grid -->
+    <div class="directory-grid" id="usersGrid" data-aos="fade-up" data-aos-delay="100">
+        <!-- Users loaded dynamically -->
+    </div>
+
+    <!-- Status Messages -->
+    <div id="loadingState" class="status-overlay py-5 text-center">
+        <div class="spinner-border text-success" role="status"></div>
+        <p class="mt-3 text-secondary fw-600">Syncing with Identity Database...</p>
+    </div>
+
+    <div id="emptyState" class="status-overlay py-5 text-center" style="display: none;">
+        <div class="empty-icon-box mb-4">
+            <i class="bi bi-person-slash"></i>
+        </div>
+        <h3>No Identities Found</h3>
+        <p class="text-secondary mb-4">We couldn't find any users matching your current filter criteria.</p>
+        <button class="btn btn-action-primary" onclick="clearFilters()">
+            <i class="bi bi-arrow-counterclockwise me-2"></i>Reset View
+        </button>
+    </div>
+</div>
+
+<!-- Enrolment Modal (Replaced by modern glass style) -->
+<div class="modal fade glass-modal" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0">
+            <div class="modal-header border-0 pb-0 px-4 pt-4">
+                <h3 class="modal-title fw-800">New User <span class="gradient-text">Enrolment</span></h3>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="addUserForm" class="row g-4">
+                    <div class="col-md-6">
+                        <label class="filter-label">Full Name</label>
+                        <input type="text" name="fullName" class="form-control-glass" required placeholder="John Doe">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="filter-label">Official Email</label>
+                        <input type="email" name="email" class="form-control-glass" required placeholder="john@company.com">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="filter-label">Employee ID / Code</label>
+                        <input type="text" name="employeeId" class="form-control-glass" placeholder="EMP-123">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="filter-label">Department</label>
+                        <select name="department" class="form-select-glass">
+                            <option value="">Select Unit</option>
+                            <option value="engineering">Engineering</option>
+                            <option value="marketing">Marketing</option>
+                            <option value="sales">Sales</option>
+                            <option value="hr">Human Resources</option>
+                            <option value="finance">Finance</option>
+                            <option value="operations">Operations</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="filter-label">Access Level</label>
+                        <select name="role" class="form-select-glass">
+                            <option value="user">Standard User</option>
+                            <option value="manager">Manager</option>
+                            <option value="admin">Administrator</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="filter-label">Registry Status</label>
+                        <select name="status" class="form-select-glass">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="suspended">Suspended</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="filter-label">Registry Notes</label>
+                        <textarea name="notes" class="form-control-glass" rows="3" placeholder="Security clearance details..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 p-4 pt-0">
+                <button type="button" class="btn btn-action-secondary" data-bs-dismiss="modal">Discard</button>
+                <button type="submit" form="addUserForm" class="btn btn-action-primary">Complete Registry</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .gradient-text {
+        background: linear-gradient(135deg, #00ff88 0%, #00d2ff 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        display: inline-block;
+    }
+
+    /* Buttons */
+    .btn-action-primary {
+        background: var(--accent-green);
+        color: var(--dark-bg);
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 700;
+        transition: all 0.3s ease;
+    }
+
+    .btn-action-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 255, 136, 0.3);
+        color: var(--dark-bg);
+    }
+
+    .btn-action-secondary {
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 0.8rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    /* Stat Cards */
+    .stat-glass-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+        transition: transform 0.3s ease;
+    }
+
+    .stat-glass-card:hover { transform: translateY(-5px); border-color: rgba(255, 255, 255, 0.15); }
+
+    .card-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    .card-icon.blue { background: rgba(0, 210, 255, 0.15); color: #00d2ff; }
+    .card-icon.green { background: rgba(0, 255, 136, 0.15); color: #00ff88; }
+    .card-icon.orange { background: rgba(255, 165, 0, 0.15); color: #ffa500; }
+    .card-icon.purple { background: rgba(160, 32, 240, 0.15); color: #a020f0; }
+
+    .card-info .label { font-size: 0.8rem; color: rgba(255, 255, 255, 0.5); font-weight: 600; }
+    .card-info h3 { font-size: 1.8rem; font-weight: 800; margin: 0; }
+
+    /* Controls Bar */
+    .data-glass-container {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 24px;
+        padding: 2rem;
+    }
+
+    .filter-label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.4);
+        margin-bottom: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .input-group-glass {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-group-glass i { position: absolute; left: 1.2rem; color: rgba(255, 255, 255, 0.3); }
+    .input-group-glass .form-control {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 0.8rem 1rem 0.8rem 3rem;
+        color: #fff;
+    }
+
+    .form-select-glass, .form-control-glass {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 0.8rem 1.2rem;
+        color: #fff;
+        width: 100%;
+    }
+
+    .btn-glass-outline {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.6);
+        padding: 0.8rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+
+    /* User Grid */
+    .directory-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .user-profile-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 24px;
+        padding: 1.5rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .user-profile-card:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(0, 255, 136, 0.3);
+        transform: translateY(-5px);
+    }
+
+    .profile-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; }
+
+    .profile-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(0, 210, 255, 0.15));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--accent-green);
+        border: 1px solid rgba(0, 255, 136, 0.2);
+    }
+
+    .status-badge {
+        padding: 0.3rem 0.8rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .status-badge.active { background: rgba(0, 255, 136, 0.1); color: #00ff88; }
+    .status-badge.inactive { background: rgba(255, 255, 255, 0.05); color: rgba(255, 255, 255, 0.5); }
+    .status-badge.suspended { background: rgba(255, 77, 77, 0.1); color: #ff4d4d; }
+
+    .profile-info h4 { font-size: 1.25rem; font-weight: 800; margin-bottom: 0.3rem; color: #fff; }
+    .profile-info .email { font-size: 0.85rem; color: rgba(255, 255, 255, 0.4); display: block; margin-bottom: 1rem; }
+
+    .profile-meta { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-bottom: 1.5rem; }
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.5);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 0.3rem 0.8rem;
+        border-radius: 8px;
+    }
+
+    .meta-item i { color: var(--accent-green); }
+
+    .profile-actions { display: flex; gap: 0.8rem; border-top: 1px solid rgba(255, 255, 255, 0.05); pt-1.2rem; }
+    .btn-profile-action {
+        flex: 1;
+        padding: 0.6rem;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: transparent;
+        color: #fff;
+        transition: all 0.2s ease;
+    }
+
+    .btn-profile-action:hover { background: rgba(255, 255, 255, 0.05); }
+    .btn-profile-action.delete:hover { background: rgba(255, 77, 77, 0.1); border-color: rgba(255, 77, 77, 0.3); color: #ff4d4d; }
+
+    /* Modals */
+    .glass-modal .modal-content {
+        background: rgba(20, 20, 20, 0.8);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 32px;
+    }
+
+    .empty-icon-box {
+        font-size: 4rem;
+        color: rgba(255, 255, 255, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let allUsers = [];
+
+    async function loadUsers() {
+        const loadingState = document.getElementById('loadingState');
+        const emptyState = document.getElementById('emptyState');
+        const usersGrid = document.getElementById('usersGrid');
+        
+        loadingState.style.display = 'block';
+        usersGrid.style.display = 'none';
+        emptyState.style.display = 'none';
+
+        try {
+            const response = await fetch('/api/users');
+            const data = await response.json();
+
+            if (data.success) {
+                allUsers = data.users;
+                renderUsers(allUsers);
+                updateStats(allUsers);
+            }
+        } catch (error) {
+            console.error('Error loading users:', error);
+        } finally {
+            loadingState.style.display = 'none';
+        }
+    }
+
+    function renderUsers(users) {
+        const usersGrid = document.getElementById('usersGrid');
+        const emptyState = document.getElementById('emptyState');
+
+        if (users.length === 0) {
+            usersGrid.style.display = 'none';
+            emptyState.style.display = 'block';
+            return;
+        }
+
+        emptyState.style.display = 'none';
+        usersGrid.style.display = 'grid';
+        usersGrid.innerHTML = '';
+
+        users.forEach(user => {
+            const card = document.createElement('div');
+            card.className = 'user-profile-card';
+            card.setAttribute('data-aos', 'fade-up');
+            
+            const initials = user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+            
+            card.innerHTML = `
+                <div class="profile-header">
+                    <div class="profile-avatar">${initials}</div>
+                    <span class="status-badge ${user.status}">${user.status}</span>
+                </div>
+                <div class="profile-info">
+                    <h4>${user.full_name}</h4>
+                    <span class="email">${user.email || 'No email provided'}</span>
+                </div>
+                <div class="profile-meta">
+                    <div class="meta-item"><i class="bi bi-building"></i> ${user.department || 'General'}</div>
+                    <div class="meta-item"><i class="bi bi-shield-lock"></i> ${user.role || 'User'}</div>
+                    <div class="meta-item"><i class="bi bi-person-badge"></i> ${user.employee_id || 'N/A'}</div>
+                </div>
+                <div class="profile-actions pt-3">
+                    <button class="btn-profile-action" onclick="editUser(${user.id})">
+                        <i class="bi bi-pencil-square me-2"></i>Edit
+                    </button>
+                    <button class="btn-profile-action delete" onclick="deleteUser(${user.id}, '${user.full_name}')">
+                        <i class="bi bi-trash3 me-2"></i>Remove
+                    </button>
+                </div>
+            `;
+            usersGrid.appendChild(card);
+        });
+    }
+
+    function updateStats(users) {
+        document.getElementById('totalUsers').textContent = users.length;
+        document.getElementById('activeUsers').textContent = users.filter(u => u.status === 'active').length;
+        document.getElementById('newUsers').textContent = users.filter(u => {
+            const regDate = new Date(u.registered_at);
+            const today = new Date();
+            return regDate.toDateString() === today.toDateString();
+        }).length;
+        document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function filterUsers() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const deptFilter = document.getElementById('departmentFilter').value.toLowerCase();
+        const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+        const roleFilter = document.getElementById('roleFilter').value.toLowerCase();
+
+        const filtered = allUsers.filter(user => {
+            const nameMatch = user.full_name.toLowerCase().includes(searchTerm) || 
+                            (user.email && user.email.toLowerCase().includes(searchTerm)) ||
+                            (user.employee_id && user.employee_id.toLowerCase().includes(searchTerm));
+            const deptMatch = !deptFilter || (user.department && user.department.toLowerCase() === deptFilter);
+            const statusMatch = !statusFilter || user.status.toLowerCase() === statusFilter;
+            const roleMatch = !roleFilter || user.role.toLowerCase() === roleFilter;
+
+            return nameMatch && deptMatch && statusMatch && roleMatch;
+        });
+
+        renderUsers(filtered);
+    }
+
+    function clearFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('departmentFilter').value = '';
+        document.getElementById('statusFilter').value = '';
+        document.getElementById('roleFilter').value = '';
+        renderUsers(allUsers);
+    }
+
+    // Modal Triggers
+    function showAddUserModal() {
+        const modal = new bootstrap.Modal(document.getElementById('addUserModal'));
+        modal.show();
+    }
+
+    async function deleteUser(id, name) {
+        if (confirm(`Are you sure you want to permanently remove ${name} from the identity database? This will also remove their face recognition profile.`)) {
+            try {
+                const response = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+                const result = await response.json();
+                if (result.success) {
+                    showNotification('User profile removed successfully', 'success');
+                    loadUsers();
+                }
+            } catch (error) {
+                showNotification('Error removing user profile', 'error');
+            }
+        }
+    }
+
+    // Form Handling
+    document.getElementById('addUserForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            const response = await fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            
+            if (result.success) {
+                bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
+                showNotification('User enrolled successfully', 'success');
+                loadUsers();
+                e.target.reset();
+            }
+        } catch (error) {
+            showNotification('Enrolment failed', 'error');
+        }
+    });
+
+    // Event Listeners
+    document.getElementById('searchInput').addEventListener('input', filterUsers);
+    document.getElementById('departmentFilter').addEventListener('change', filterUsers);
+    document.getElementById('statusFilter').addEventListener('change', filterUsers);
+    document.getElementById('roleFilter').addEventListener('change', filterUsers);
+
+    document.addEventListener('DOMContentLoaded', loadUsers);
+</script>
+{% endblock %}

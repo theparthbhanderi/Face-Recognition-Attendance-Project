@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}System Command | FaceAI{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-xl-5">
+    <!-- Header Section -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3" data-aos="fade-right">
+        <div>
+            <h1 class="display-5 fw-bold mb-1">System <span class="gradient-text">Command</span></h1>
+            <p class="text-secondary mb-0">High-level administration of biometric signatures and system security.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('add_face') }}" class="btn btn-action-primary">
+                <i class="bi bi-plus-circle me-2"></i>New Signature
+            </a>
+            <a href="{{ url_for('index') }}" class="btn btn-action-secondary">
+                <i class="bi bi-house me-2"></i>Home
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Insights -->
+    <div class="row g-4 mb-5" data-aos="fade-up">
+        <div class="col-md-4">
+            <div class="stat-glass-card">
+                <div class="card-icon blue"><i class="bi bi-fingerprint"></i></div>
+                <div class="card-info">
+                    <span class="label">Total Signatures</span>
+                    <h3>{{ known_faces|length if known_faces else 0 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-glass-card">
+                <div class="card-icon green"><i class="bi bi-shield-check"></i></div>
+                <div class="card-info">
+                    <span class="label">System Integrity</span>
+                    <h3>Verified</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-glass-card">
+                <div class="card-icon purple"><i class="bi bi-cpu"></i></div>
+                <div class="card-info">
+                    <span class="label">Engine Status</span>
+                    <h3>Live</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Management Console -->
+    <div class="data-glass-container" data-aos="fade-up" data-aos-delay="100">
+        <div class="console-header mb-4 d-flex justify-content-between align-items-center">
+            <h4 class="mb-0 fw-700">Biometric Directory</h4>
+            <span class="badge-dot-live"></span>
+        </div>
+
+        {% if known_faces %}
+            <div class="table-responsive-glass">
+                <table class="table-glass">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Subject Identity</th>
+                            <th>Security Level</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for name, face_id in known_faces %}
+                            <tr class="activity-row">
+                                <td class="id-cell">#{{ face_id + 1 }}</td>
+                                <td class="user-cell">
+                                    <div class="user-avatar">
+                                        {{ name[0]|upper }}
+                                    </div>
+                                    <div class="user-info">
+                                        <span class="name">{{ name }}</span>
+                                        <span class="id">BIOM-{{ face_id + 1000 }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="dept-pill">Authorized</span>
+                                </td>
+                                <td class="text-end">
+                                    <form action="{{ url_for('delete_face', face_id=face_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Permanently remove this biometric signature?');">
+                                        <button type="submit" class="btn-icon-glass delete" title="Purge Signature">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state text-center py-5">
+                <div class="empty-icon-box mb-4">
+                    <i class="bi bi-fingerprint"></i>
+                </div>
+                <h3>No Signatures Found</h3>
+                <p class="text-secondary mb-4">The biometric database is currently empty. Start by enrolling a new face signature.</p>
+                <a href="{{ url_for('add_face') }}" class="btn btn-action-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Enroll First Signature
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .gradient-text {
+        background: linear-gradient(135deg, #00ff88 0%, #00d2ff 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        display: inline-block;
+    }
+
+    /* Buttons */
+    .btn-action-primary {
+        background: var(--accent-green);
+        color: var(--dark-bg);
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 700;
+        transition: all 0.3s ease;
+    }
+
+    .btn-action-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 255, 136, 0.3);
+        color: var(--dark-bg);
+    }
+
+    .btn-action-secondary {
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 0.8rem 1.5rem; border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    /* Stat Cards */
+    .stat-glass-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+    }
+
+    .card-icon {
+        width: 50px; height: 50px; border-radius: 14px;
+        display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+    }
+    .card-icon.blue { background: rgba(0, 210, 255, 0.15); color: #00d2ff; }
+    .card-icon.green { background: rgba(0, 255, 136, 0.15); color: #00ff88; }
+    .card-icon.purple { background: rgba(160, 32, 240, 0.15); color: #a020f0; }
+
+    .card-info .label { font-size: 0.8rem; color: rgba(255, 255, 255, 0.5); font-weight: 600; }
+    .card-info h3 { font-size: 1.5rem; font-weight: 800; margin: 0; }
+
+    /* Data Glass */
+    .data-glass-container {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 24px;
+        padding: 2rem;
+    }
+
+    .badge-dot-live {
+        display: inline-block;
+        width: 8px; height: 8px;
+        background: #00ff88;
+        border-radius: 50%;
+        box-shadow: 0 0 10px #00ff88;
+        animation: blink 1.5s infinite;
+    }
+
+    /* Table Glass */
+    .table-glass { width: 100%; border-collapse: separate; border-spacing: 0 0.8rem; }
+    .table-glass th { padding: 1rem 1.5rem; font-size: 0.85rem; font-weight: 700; color: rgba(255, 255, 255, 0.4); text-transform: uppercase; border: none; }
+    
+    .activity-row { background: rgba(255, 255, 255, 0.02); transition: all 0.3s ease; }
+    .activity-row:hover { background: rgba(255, 255, 255, 0.05); }
+    .activity-row td { padding: 1.2rem 1.5rem; vertical-align: middle; border-top: 1px solid rgba(255, 255, 255, 0.05); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+    .activity-row td:first-child { border-left: 1px solid rgba(255, 255, 255, 0.05); border-top-left-radius: 16px; border-bottom-left-radius: 16px; }
+    .activity-row td:last-child { border-right: 1px solid rgba(255, 255, 255, 0.05); border-top-right-radius: 16px; border-bottom-right-radius: 16px; }
+
+    .id-cell { font-weight: 700; color: rgba(255, 255, 255, 0.4); font-family: monospace; }
+    
+    .user-cell { display: flex; align-items: center; gap: 1rem; }
+    .user-avatar {
+        width: 42px; height: 42px;
+        background: linear-gradient(135deg, var(--accent-green), #00d2ff);
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 800; color: var(--dark-bg);
+    }
+    .user-info .name { display: block; font-weight: 700; color: #fff; }
+    .user-info .id { font-size: 0.8rem; color: rgba(255, 255, 255, 0.4); }
+
+    .dept-pill {
+        padding: 0.4rem 0.8rem;
+        background: rgba(0, 255, 136, 0.1);
+        border: 1px solid rgba(0, 255, 136, 0.2);
+        border-radius: 8px;
+        font-size: 0.85rem; font-weight: 700; color: #00ff88;
+    }
+
+    .btn-icon-glass {
+        width: 38px; height: 38px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        color: rgba(255, 255, 255, 0.5);
+        display: inline-flex; align-items: center; justify-content: center;
+        transition: all 0.2s ease;
+    }
+    .btn-icon-glass:hover.delete { background: rgba(255, 77, 77, 0.1); border-color: rgba(255, 77, 77, 0.3); color: #ff4d4d; }
+
+    .empty-icon-box { font-size: 4rem; color: rgba(255, 255, 255, 0.1); }
+</style>
+{% endblock %}
