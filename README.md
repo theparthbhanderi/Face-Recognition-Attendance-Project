@@ -487,4 +487,11 @@ Then visit: **http://localhost:5000/auto_attendance**
 
 ---
 
+## 👨‍💻 Author
+
+**Parth Bhanderi**  
+*Main Developer & Visionary*
+
+---
+
 **Happy using your automated face recognition system!** 🚀
